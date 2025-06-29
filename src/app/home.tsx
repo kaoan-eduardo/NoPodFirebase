@@ -1,0 +1,293 @@
+import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { signOut } from "firebase/auth";
+import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import { auth, firestore } from "../firebaseConfig";
+import { colors } from "../styles/colors";
+import { styles } from "../styles/homeStyles";
+
+export default function Home() {
+  const [selectedDays, setSelectedDays] = useState({
+    seg: false,
+    ter: false,
+    qua: false,
+    qui: false,
+    sex: false,
+    sab: false,
+    dom: false,
+  });
+
+  const [nomeUsuario, setNomeUsuario] = useState("");
+  const [vezesNaoFumou, setVezesNaoFumou] = useState(0);
+  const [ultimaResistencia, setUltimaResistencia] = useState("");
+  const [userImage, setUserImage] = useState<string | null>(null);
+
+  const salvarDadosNoFirestore = async (novosDados: Partial<any>) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const docRef = doc(firestore, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        await runTransaction(firestore, async (transaction) => {
+          const atual = docSnap.data();
+          transaction.update(docRef, { ...atual, ...novosDados });
+        });
+      } else {
+        await setDoc(docRef, { ...novosDados });
+      }
+    } catch (err) {
+      console.error("Erro ao salvar no Firestore:", err);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Sair do aplicativo",
+      "Você tem certeza que deseja sair?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              router.replace("/");
+            } catch (error) {
+              console.error("Erro ao sair:", error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const docRef = doc(firestore, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const dados = docSnap.data();
+            setNomeUsuario(dados.name || "");
+            if (dados.selectedDays) setSelectedDays(dados.selectedDays);
+            if (dados.vezesNaoFumou) setVezesNaoFumou(dados.vezesNaoFumou);
+            if (dados.ultimaResistencia)
+              setUltimaResistencia(dados.ultimaResistencia);
+            if (dados.userImage) setUserImage(dados.userImage);
+          }
+        }
+
+        const contagem = await AsyncStorage.getItem("vezesNaoFumou");
+        if (contagem) setVezesNaoFumou(parseInt(contagem));
+
+        const data = await AsyncStorage.getItem("ultimaResistencia");
+        if (data) setUltimaResistencia(data);
+
+        const imagemSalva = await AsyncStorage.getItem("imagemUsuario");
+        if (imagemSalva) setUserImage(imagemSalva);
+      } catch (error) {
+        console.log("Erro ao carregar dados:", error);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
+  const escolherImagem = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão negada",
+        "Precisamos da sua permissão para acessar a galeria."
+      );
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!resultado.canceled && resultado.assets.length > 0) {
+      const imagemSelecionada = resultado.assets[0].uri;
+      setUserImage(imagemSelecionada);
+      await AsyncStorage.setItem("imagemUsuario", imagemSelecionada);
+      salvarDadosNoFirestore({ userImage: imagemSelecionada });
+    }
+  };
+
+  const toggleDaySelection = (day: keyof typeof selectedDays) => {
+    Vibration.vibrate(50);
+    setSelectedDays((prevState) => {
+      const novosDias = {
+        ...prevState,
+        [day]: !prevState[day],
+      };
+      salvarDadosNoFirestore({ selectedDays: novosDias });
+      return novosDias;
+    });
+  };
+
+  const renderDayIcon = (day: keyof typeof selectedDays) => {
+    const isSelected = selectedDays[day];
+    return (
+      <TouchableOpacity onPress={() => toggleDaySelection(day)}>
+        <MaterialIcons
+          name="check-box"
+          size={40}
+          style={{
+            backgroundColor: isSelected ? "white" : "transparent",
+            borderRadius: 5,
+            color: isSelected ? "green" : "black",
+            textAlign: "center",
+          }}
+        />
+      </TouchableOpacity>
+    );
+  };
+
+  const handleQueroFumar = async () => {
+    try {
+      const novaContagem = vezesNaoFumou + 1;
+      setVezesNaoFumou(novaContagem);
+      await AsyncStorage.setItem("vezesNaoFumou", novaContagem.toString());
+
+      const agora = new Date();
+      const dataHora = `${agora.toLocaleDateString(
+        "pt-BR"
+      )} às ${agora.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+
+      setUltimaResistencia(dataHora);
+      await AsyncStorage.setItem("ultimaResistencia", dataHora);
+
+      salvarDadosNoFirestore({
+        vezesNaoFumou: novaContagem,
+        ultimaResistencia: dataHora,
+      });
+
+      router.push("/breathingCircle");
+    } catch (error) {
+      console.log("Erro ao atualizar contagem ou data:", error);
+    }
+  };
+
+  return (
+    <LinearGradient
+      colors={[colors.pink[100], colors.blue[100]]}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.informations}>
+          <Image
+            source={require("../assets/images/appLogo.png")}
+            style={styles.appLogo}
+          />
+          <TouchableOpacity onPress={escolherImagem}>
+            <Image
+              source={
+                userImage
+                  ? { uri: userImage }
+                  : require("../assets/images/userLogo.png")
+              }
+              style={styles.userLogo}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Botão logout */}
+        <View style={styles.logoutContainer}>
+          <Pressable onPress={handleLogout}>
+            <MaterialIcons name="logout" size={30} color="white" />
+          </Pressable>
+        </View>
+
+        <View style={styles.userTextContainer}>
+          <Text style={styles.userText}>Bem-vindo {nomeUsuario}</Text>
+        </View>
+
+        <View style={styles.weekControlContainer}>
+          <Text style={styles.weekText}>Controle da semana</Text>
+          <Text style={styles.weekTextTwo}>Dias que você deixou de fumar</Text>
+
+          <View style={styles.calendarDays}>
+            {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
+              <Text key={day} style={styles.calendarDaysText}>
+                {day.charAt(0).toUpperCase() + day.slice(1)}
+              </Text>
+            ))}
+          </View>
+
+          <View style={styles.calendar}>
+            {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
+              <View key={day} style={{ flex: 1, alignItems: "center" }}>
+                {renderDayIcon(day as keyof typeof selectedDays)}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.noSmokeContainer}>
+          <Text style={styles.noSmokeText}>Vezes que deixou de fumar</Text>
+          <Text style={{ fontSize: 22, color: "#fff", fontWeight: "bold" }}>
+            {vezesNaoFumou}
+          </Text>
+          {ultimaResistencia && (
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 16,
+                marginTop: 8,
+                fontWeight: "600",
+                textAlign: "center",
+              }}
+            >
+              Última resistência: {ultimaResistencia}
+            </Text>
+          )}
+          <View style={styles.imageContainer}>
+            <Image
+              source={require("../assets/images/NoSmokeLogo.png")}
+              style={styles.noSmokeImage}
+            />
+          </View>
+        </View>
+
+        <View style={styles.smokeButtonContainer}>
+          <Pressable onPress={handleQueroFumar}>
+            <Text style={styles.smokeButtonText}>Quero Fumar!</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </LinearGradient>
+  );
+}

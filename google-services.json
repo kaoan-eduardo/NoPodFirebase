@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "35048749950",
+    "project_id": "nopodfirebase-b02d6",
+    "storage_bucket": "nopodfirebase-b02d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:35048749950:android:1147560efcd5063052912f",
+        "android_client_info": {
+          "package_name": "com.firebase.nopod"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1iPpeVWCSqEEifVaQu1DphdN61u_iyKg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
