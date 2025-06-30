@@ -116,28 +116,72 @@ export default function Home() {
   }, []);
 
   const escolherImagem = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permissão negada",
-        "Precisamos da sua permissão para acessar a galeria."
-      );
-      return;
-    }
+    Alert.alert(
+      "Selecionar imagem",
+      "Escolha uma opção",
+      [
+        {
+          text: "Câmera",
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== "granted") {
+              Alert.alert(
+                "Permissão negada",
+                "Precisamos da sua permissão para acessar a câmera."
+              );
+              return;
+            }
 
-    const resultado = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+            const resultado = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 1,
+            });
 
-    if (!resultado.canceled && resultado.assets.length > 0) {
-      const imagemSelecionada = resultado.assets[0].uri;
-      setUserImage(imagemSelecionada);
-      await AsyncStorage.setItem("imagemUsuario", imagemSelecionada);
-      salvarDadosNoFirestore({ userImage: imagemSelecionada });
-    }
+            if (!resultado.canceled && resultado.assets.length > 0) {
+              const imagemCapturada = resultado.assets[0].uri;
+              setUserImage(imagemCapturada);
+              await AsyncStorage.setItem("imagemUsuario", imagemCapturada);
+              salvarDadosNoFirestore({ userImage: imagemCapturada });
+            }
+          },
+        },
+        {
+          text: "Galeria",
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+              Alert.alert(
+                "Permissão negada",
+                "Precisamos da sua permissão para acessar a galeria."
+              );
+              return;
+            }
+
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 1,
+            });
+
+            if (!resultado.canceled && resultado.assets.length > 0) {
+              const imagemSelecionada = resultado.assets[0].uri;
+              setUserImage(imagemSelecionada);
+              await AsyncStorage.setItem("imagemUsuario", imagemSelecionada);
+              salvarDadosNoFirestore({ userImage: imagemSelecionada });
+            }
+          },
+        },
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const toggleDaySelection = (day: keyof typeof selectedDays) => {
@@ -224,7 +268,6 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* Botão logout */}
         <View style={styles.logoutContainer}>
           <Pressable onPress={handleLogout}>
             <MaterialIcons name="logout" size={30} color="white" />
