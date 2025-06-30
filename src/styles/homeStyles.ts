@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
   logoutContainer: {
     position: "absolute",
     top: 77,
-    right: 25,
+    right: 20,
   },
 
   informations: {

@@ -69,6 +69,9 @@ export default function Home() {
           style: "destructive",
           onPress: async () => {
             try {
+              await AsyncStorage.removeItem("imagemUsuario");
+              await AsyncStorage.removeItem("vezesNaoFumou");
+              await AsyncStorage.removeItem("ultimaResistencia");
               await signOut(auth);
               router.replace("/");
             } catch (error) {
@@ -104,9 +107,6 @@ export default function Home() {
 
         const data = await AsyncStorage.getItem("ultimaResistencia");
         if (data) setUltimaResistencia(data);
-
-        const imagemSalva = await AsyncStorage.getItem("imagemUsuario");
-        if (imagemSalva) setUserImage(imagemSalva);
       } catch (error) {
         console.log("Erro ao carregar dados:", error);
       }
@@ -142,7 +142,6 @@ export default function Home() {
             if (!resultado.canceled && resultado.assets.length > 0) {
               const imagemCapturada = resultado.assets[0].uri;
               setUserImage(imagemCapturada);
-              await AsyncStorage.setItem("imagemUsuario", imagemCapturada);
               salvarDadosNoFirestore({ userImage: imagemCapturada });
             }
           },
@@ -170,7 +169,6 @@ export default function Home() {
             if (!resultado.canceled && resultado.assets.length > 0) {
               const imagemSelecionada = resultado.assets[0].uri;
               setUserImage(imagemSelecionada);
-              await AsyncStorage.setItem("imagemUsuario", imagemSelecionada);
               salvarDadosNoFirestore({ userImage: imagemSelecionada });
             }
           },
