@@ -1,11 +1,11 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -17,7 +17,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { auth, firestore, storage } from "../firebaseConfig";
+import { auth, firestore } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/homeStyles";
 
@@ -31,6 +31,7 @@ export default function Home() {
     sab: false,
     dom: false,
   });
+
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [vezesNaoFumou, setVezesNaoFumou] = useState(0);
   const [ultimaResistencia, setUltimaResistencia] = useState("");
@@ -50,9 +51,8 @@ export default function Home() {
       } else {
         await setDoc(docRef, { ...novosDados });
       }
-      console.log("✅ Dados salvos no Firestore:", novosDados);
     } catch (err) {
-      console.error("❌ Erro ao salvar no Firestore:", err);
+      console.error("Erro ao salvar no Firestore:", err);
     }
   };
 
@@ -70,9 +70,7 @@ export default function Home() {
           style: "destructive",
           onPress: async () => {
             try {
-              await AsyncStorage.clear();
               await signOut(auth);
-              setUserImage(null);
               router.replace("/");
             } catch (error) {
               console.error("Erro ao sair:", error);
@@ -99,104 +97,61 @@ export default function Home() {
             if (dados.ultimaResistencia)
               setUltimaResistencia(dados.ultimaResistencia);
             if (dados.userImage) setUserImage(dados.userImage);
-            console.log("📥 Dados carregados do Firestore:", dados);
           }
         }
+
         const contagem = await AsyncStorage.getItem("vezesNaoFumou");
         if (contagem) setVezesNaoFumou(parseInt(contagem));
 
         const data = await AsyncStorage.getItem("ultimaResistencia");
         if (data) setUltimaResistencia(data);
+
+        const imagemSalva = await AsyncStorage.getItem("imagemUsuario");
+        if (imagemSalva) setUserImage(imagemSalva);
       } catch (error) {
         console.log("Erro ao carregar dados:", error);
       }
     }
+
     carregarDados();
   }, []);
 
   const escolherImagem = async () => {
-    Alert.alert("Selecionar imagem", "Escolha uma opção", [
-      {
-        text: "Câmera",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Permissão negada", "Permita o acesso à câmera.");
-            return;
-          }
-          const resultado = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
-          if (!resultado.canceled && resultado.assets.length > 0) {
-            console.log(
-              "📸 Imagem da câmera selecionada:",
-              resultado.assets[0].uri
-            );
-            await uploadAndSaveImage(resultado.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Galeria",
-        onPress: async () => {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Permissão negada", "Permita o acesso à galeria.");
-            return;
-          }
-          const resultado = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
-          if (!resultado.canceled && resultado.assets.length > 0) {
-            console.log(
-              "🖼️ Imagem da galeria selecionada:",
-              resultado.assets[0].uri
-            );
-            await uploadAndSaveImage(resultado.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-    ]);
-  };
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão negada",
+        "Precisamos da sua permissão para acessar a galeria."
+      );
+      return;
+    }
 
-  const uploadAndSaveImage = async (uri: string) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
 
-      console.log("🔄 Iniciando upload da imagem:", uri);
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      console.log("📦 Blob criado com sucesso");
-
-      const imageRef = ref(storage, `profileImages/${user.uid}.jpg`);
-      await uploadBytes(imageRef, blob);
-      console.log("✅ Upload feito com sucesso");
-
-      const downloadURL = await getDownloadURL(imageRef);
-      console.log("🌐 URL da imagem:", downloadURL);
-
-      setUserImage(downloadURL);
-      await salvarDadosNoFirestore({ userImage: downloadURL });
-    } catch (error) {
-      console.error("❌ Erro no upload da imagem:", error);
+    if (!resultado.canceled && resultado.assets.length > 0) {
+      const uri = resultado.assets[0].uri;
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const base64Uri = `data:image/jpeg;base64,${base64}`;
+      setUserImage(base64Uri);
+      await AsyncStorage.setItem("imagemUsuario", base64Uri);
+      salvarDadosNoFirestore({ userImage: base64Uri });
     }
   };
 
   const toggleDaySelection = (day: keyof typeof selectedDays) => {
     Vibration.vibrate(50);
-    setSelectedDays((prev) => {
-      const novosDias = { ...prev, [day]: !prev[day] };
+    setSelectedDays((prevState) => {
+      const novosDias = {
+        ...prevState,
+        [day]: !prevState[day],
+      };
       salvarDadosNoFirestore({ selectedDays: novosDias });
       return novosDias;
     });
@@ -273,17 +228,21 @@ export default function Home() {
             />
           </TouchableOpacity>
         </View>
+
         <View style={styles.logoutContainer}>
           <Pressable onPress={handleLogout}>
             <MaterialIcons name="logout" size={30} color="white" />
           </Pressable>
         </View>
+
         <View style={styles.userTextContainer}>
           <Text style={styles.userText}>Bem-vindo {nomeUsuario}</Text>
         </View>
+
         <View style={styles.weekControlContainer}>
           <Text style={styles.weekText}>Controle da semana</Text>
           <Text style={styles.weekTextTwo}>Dias que você deixou de fumar</Text>
+
           <View style={styles.calendarDays}>
             {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
               <Text key={day} style={styles.calendarDaysText}>
@@ -291,6 +250,7 @@ export default function Home() {
               </Text>
             ))}
           </View>
+
           <View style={styles.calendar}>
             {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
               <View key={day} style={{ flex: 1, alignItems: "center" }}>
@@ -299,6 +259,7 @@ export default function Home() {
             ))}
           </View>
         </View>
+
         <View style={styles.noSmokeContainer}>
           <Text style={styles.noSmokeText}>Vezes que deixou de fumar</Text>
           <Text style={{ fontSize: 22, color: "#fff", fontWeight: "bold" }}>
@@ -324,6 +285,7 @@ export default function Home() {
             />
           </View>
         </View>
+
         <View style={styles.smokeButtonContainer}>
           <Pressable onPress={handleQueroFumar}>
             <Text style={styles.smokeButtonText}>Quero Fumar!</Text>
