@@ -1,6 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -51,8 +50,9 @@ export default function Home() {
       } else {
         await setDoc(docRef, { ...novosDados });
       }
+      console.log("✅ Dados salvos no Firestore:", novosDados);
     } catch (err) {
-      console.error("Erro ao salvar no Firestore:", err);
+      console.error("❌ Erro ao salvar no Firestore:", err);
     }
   };
 
@@ -70,8 +70,7 @@ export default function Home() {
           style: "destructive",
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem("vezesNaoFumou");
-              await AsyncStorage.removeItem("ultimaResistencia");
+              await AsyncStorage.clear();
               await signOut(auth);
               setUserImage(null);
               router.replace("/");
@@ -100,10 +99,12 @@ export default function Home() {
             if (dados.ultimaResistencia)
               setUltimaResistencia(dados.ultimaResistencia);
             if (dados.userImage) setUserImage(dados.userImage);
+            console.log("📥 Dados carregados do Firestore:", dados);
           }
         }
         const contagem = await AsyncStorage.getItem("vezesNaoFumou");
         if (contagem) setVezesNaoFumou(parseInt(contagem));
+
         const data = await AsyncStorage.getItem("ultimaResistencia");
         if (data) setUltimaResistencia(data);
       } catch (error) {
@@ -114,88 +115,90 @@ export default function Home() {
   }, []);
 
   const escolherImagem = async () => {
-    Alert.alert(
-      "Selecionar imagem",
-      "Escolha uma opção",
-      [
-        {
-          text: "Câmera",
-          onPress: async () => {
-            const { status } =
-              await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== "granted") {
-              Alert.alert(
-                "Permissão negada",
-                "Precisamos da sua permissão para acessar a câmera."
-              );
-              return;
-            }
-            const resultado = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 1,
-            });
-            if (!resultado.canceled && resultado.assets.length > 0) {
-              await uploadAndSaveImage(resultado.assets[0].uri);
-            }
-          },
+    Alert.alert("Selecionar imagem", "Escolha uma opção", [
+      {
+        text: "Câmera",
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permissão negada", "Permita o acesso à câmera.");
+            return;
+          }
+          const resultado = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+          });
+          if (!resultado.canceled && resultado.assets.length > 0) {
+            console.log(
+              "📸 Imagem da câmera selecionada:",
+              resultado.assets[0].uri
+            );
+            await uploadAndSaveImage(resultado.assets[0].uri);
+          }
         },
-        {
-          text: "Galeria",
-          onPress: async () => {
-            const { status } =
-              await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== "granted") {
-              Alert.alert(
-                "Permissão negada",
-                "Precisamos da sua permissão para acessar a galeria."
-              );
-              return;
-            }
-            const resultado = await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 1,
-            });
-            if (!resultado.canceled && resultado.assets.length > 0) {
-              await uploadAndSaveImage(resultado.assets[0].uri);
-            }
-          },
+      },
+      {
+        text: "Galeria",
+        onPress: async () => {
+          const { status } =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permissão negada", "Permita o acesso à galeria.");
+            return;
+          }
+          const resultado = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+          });
+          if (!resultado.canceled && resultado.assets.length > 0) {
+            console.log(
+              "🖼️ Imagem da galeria selecionada:",
+              resultado.assets[0].uri
+            );
+            await uploadAndSaveImage(resultado.assets[0].uri);
+          }
         },
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-      ],
-      { cancelable: true }
-    );
+      },
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+    ]);
   };
 
   const uploadAndSaveImage = async (uri: string) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const blob = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+      console.log("🔄 Iniciando upload da imagem:", uri);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      console.log("📦 Blob criado com sucesso");
+
       const imageRef = ref(storage, `profileImages/${user.uid}.jpg`);
       await uploadBytes(imageRef, blob);
+      console.log("✅ Upload feito com sucesso");
+
       const downloadURL = await getDownloadURL(imageRef);
+      console.log("🌐 URL da imagem:", downloadURL);
+
       setUserImage(downloadURL);
-      salvarDadosNoFirestore({ userImage: downloadURL });
+      await salvarDadosNoFirestore({ userImage: downloadURL });
     } catch (error) {
-      console.error("Erro no upload:", error);
+      console.error("❌ Erro no upload da imagem:", error);
     }
   };
 
   const toggleDaySelection = (day: keyof typeof selectedDays) => {
     Vibration.vibrate(50);
     setSelectedDays((prev) => {
-      const novos = { ...prev, [day]: !prev[day] };
-      salvarDadosNoFirestore({ selectedDays: novos });
-      return novos;
+      const novosDias = { ...prev, [day]: !prev[day] };
+      salvarDadosNoFirestore({ selectedDays: novosDias });
+      return novosDias;
     });
   };
 
@@ -219,9 +222,10 @@ export default function Home() {
 
   const handleQueroFumar = async () => {
     try {
-      const nova = vezesNaoFumou + 1;
-      setVezesNaoFumou(nova);
-      await AsyncStorage.setItem("vezesNaoFumou", nova.toString());
+      const novaContagem = vezesNaoFumou + 1;
+      setVezesNaoFumou(novaContagem);
+      await AsyncStorage.setItem("vezesNaoFumou", novaContagem.toString());
+
       const agora = new Date();
       const dataHora = `${agora.toLocaleDateString(
         "pt-BR"
@@ -229,15 +233,18 @@ export default function Home() {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
+
       setUltimaResistencia(dataHora);
       await AsyncStorage.setItem("ultimaResistencia", dataHora);
+
       salvarDadosNoFirestore({
-        vezesNaoFumou: nova,
+        vezesNaoFumou: novaContagem,
         ultimaResistencia: dataHora,
       });
+
       router.push("/breathingCircle");
     } catch (error) {
-      console.log("Erro no handleQueroFumar:", error);
+      console.log("Erro ao atualizar contagem ou data:", error);
     }
   };
 
