@@ -36,7 +36,6 @@ export default function RegisterScreen() {
       );
       const user = userCredential.user;
 
-      // Salva o nome e e-mail no Firestore
       await setDoc(doc(firestore, "users", user.uid), {
         name: userName,
         email: user.email,
