@@ -37,6 +37,7 @@ export const styles = StyleSheet.create({
     borderWidth: 0.01,
     borderColor: colors.white[100],
     marginRight: 40,
+    backgroundColor: colors.white[100],
   },
 
   userTextContainer: {},
