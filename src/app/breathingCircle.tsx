@@ -22,13 +22,13 @@ export default function BreathingCircle() {
     Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 2.2,
+          toValue: 2.4,
           duration: 4000,
           useNativeDriver: true,
           easing: Easing.inOut(Easing.ease),
         }),
         Animated.timing(scaleAnim, {
-          toValue: 0.5,
+          toValue: 1.0,
           duration: 3000,
           useNativeDriver: true,
           easing: Easing.inOut(Easing.ease),

@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
   },
 
   textContainer: {
-    marginBottom: 100, // Aumentado para dar espaço ao círculo
+    marginBottom: 130,
     alignItems: "center",
   },
 
@@ -59,7 +59,7 @@ export const styles = StyleSheet.create({
   circleWrapper: {
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 250, // Garante espaço para o círculo expandir
+    minHeight: 250,
   },
 
   circle: {

@@ -34,6 +34,8 @@ export const styles = StyleSheet.create({
     height: 50,
     resizeMode: "contain",
     borderRadius: 50,
+    borderWidth: 0.01,
+    borderColor: colors.white[100],
     marginRight: 40,
   },
 
