@@ -28,7 +28,7 @@ export default function ForgotPasswordScreen() {
     try {
       await sendPasswordResetEmail(auth, email);
       Alert.alert("Sucesso", "Link de recuperação enviado para seu e-mail.");
-      router.replace("/"); // volta para tela de login
+      router.replace("/");
     } catch (error: any) {
       console.error("Erro ao enviar e-mail:", error);
       Alert.alert("Erro", "Falha ao enviar e-mail: " + error.message);
