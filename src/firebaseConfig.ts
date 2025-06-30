@@ -1,10 +1,9 @@
-// src/firebaseConfig.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
 import { getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage"; // ⬅️ Importar o Storage
 
-// Configuração do seu projeto Firebase
 const firebaseConfig = {
   apiKey: "REMOVIDO",
   authDomain: "nopodfirebase-b02d6.firebaseapp.com",
@@ -14,15 +13,13 @@ const firebaseConfig = {
   appId: "1:35048749950:web:d159bef41000a28052912f",
 };
 
-// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa Auth com persistência entre sessões
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-// Inicializa Firestore
 const firestore = getFirestore(app);
+const storage = getStorage(app);
 
-export { auth, firestore };
+export { auth, firestore, storage };
