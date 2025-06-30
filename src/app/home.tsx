@@ -1,10 +1,12 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, runTransaction, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -16,7 +18,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { auth, firestore } from "../firebaseConfig";
+import { auth, firestore, storage } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/homeStyles";
 
@@ -30,7 +32,6 @@ export default function Home() {
     sab: false,
     dom: false,
   });
-
   const [nomeUsuario, setNomeUsuario] = useState("");
   const [vezesNaoFumou, setVezesNaoFumou] = useState(0);
   const [ultimaResistencia, setUltimaResistencia] = useState("");
@@ -69,10 +70,10 @@ export default function Home() {
           style: "destructive",
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem("imagemUsuario");
               await AsyncStorage.removeItem("vezesNaoFumou");
               await AsyncStorage.removeItem("ultimaResistencia");
               await signOut(auth);
+              setUserImage(null);
               router.replace("/");
             } catch (error) {
               console.error("Erro ao sair:", error);
@@ -101,17 +102,14 @@ export default function Home() {
             if (dados.userImage) setUserImage(dados.userImage);
           }
         }
-
         const contagem = await AsyncStorage.getItem("vezesNaoFumou");
         if (contagem) setVezesNaoFumou(parseInt(contagem));
-
         const data = await AsyncStorage.getItem("ultimaResistencia");
         if (data) setUltimaResistencia(data);
       } catch (error) {
         console.log("Erro ao carregar dados:", error);
       }
     }
-
     carregarDados();
   }, []);
 
@@ -132,17 +130,13 @@ export default function Home() {
               );
               return;
             }
-
             const resultado = await ImagePicker.launchCameraAsync({
               allowsEditing: true,
               aspect: [1, 1],
               quality: 1,
             });
-
             if (!resultado.canceled && resultado.assets.length > 0) {
-              const imagemCapturada = resultado.assets[0].uri;
-              setUserImage(imagemCapturada);
-              salvarDadosNoFirestore({ userImage: imagemCapturada });
+              await uploadAndSaveImage(resultado.assets[0].uri);
             }
           },
         },
@@ -158,18 +152,14 @@ export default function Home() {
               );
               return;
             }
-
             const resultado = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
               allowsEditing: true,
               aspect: [1, 1],
               quality: 1,
             });
-
             if (!resultado.canceled && resultado.assets.length > 0) {
-              const imagemSelecionada = resultado.assets[0].uri;
-              setUserImage(imagemSelecionada);
-              salvarDadosNoFirestore({ userImage: imagemSelecionada });
+              await uploadAndSaveImage(resultado.assets[0].uri);
             }
           },
         },
@@ -182,15 +172,30 @@ export default function Home() {
     );
   };
 
+  const uploadAndSaveImage = async (uri: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const blob = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const imageRef = ref(storage, `profileImages/${user.uid}.jpg`);
+      await uploadBytes(imageRef, blob);
+      const downloadURL = await getDownloadURL(imageRef);
+      setUserImage(downloadURL);
+      salvarDadosNoFirestore({ userImage: downloadURL });
+    } catch (error) {
+      console.error("Erro no upload:", error);
+    }
+  };
+
   const toggleDaySelection = (day: keyof typeof selectedDays) => {
     Vibration.vibrate(50);
-    setSelectedDays((prevState) => {
-      const novosDias = {
-        ...prevState,
-        [day]: !prevState[day],
-      };
-      salvarDadosNoFirestore({ selectedDays: novosDias });
-      return novosDias;
+    setSelectedDays((prev) => {
+      const novos = { ...prev, [day]: !prev[day] };
+      salvarDadosNoFirestore({ selectedDays: novos });
+      return novos;
     });
   };
 
@@ -214,10 +219,9 @@ export default function Home() {
 
   const handleQueroFumar = async () => {
     try {
-      const novaContagem = vezesNaoFumou + 1;
-      setVezesNaoFumou(novaContagem);
-      await AsyncStorage.setItem("vezesNaoFumou", novaContagem.toString());
-
+      const nova = vezesNaoFumou + 1;
+      setVezesNaoFumou(nova);
+      await AsyncStorage.setItem("vezesNaoFumou", nova.toString());
       const agora = new Date();
       const dataHora = `${agora.toLocaleDateString(
         "pt-BR"
@@ -225,18 +229,15 @@ export default function Home() {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
-
       setUltimaResistencia(dataHora);
       await AsyncStorage.setItem("ultimaResistencia", dataHora);
-
       salvarDadosNoFirestore({
-        vezesNaoFumou: novaContagem,
+        vezesNaoFumou: nova,
         ultimaResistencia: dataHora,
       });
-
       router.push("/breathingCircle");
     } catch (error) {
-      console.log("Erro ao atualizar contagem ou data:", error);
+      console.log("Erro no handleQueroFumar:", error);
     }
   };
 
@@ -265,21 +266,17 @@ export default function Home() {
             />
           </TouchableOpacity>
         </View>
-
         <View style={styles.logoutContainer}>
           <Pressable onPress={handleLogout}>
             <MaterialIcons name="logout" size={30} color="white" />
           </Pressable>
         </View>
-
         <View style={styles.userTextContainer}>
           <Text style={styles.userText}>Bem-vindo {nomeUsuario}</Text>
         </View>
-
         <View style={styles.weekControlContainer}>
           <Text style={styles.weekText}>Controle da semana</Text>
           <Text style={styles.weekTextTwo}>Dias que você deixou de fumar</Text>
-
           <View style={styles.calendarDays}>
             {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
               <Text key={day} style={styles.calendarDaysText}>
@@ -287,7 +284,6 @@ export default function Home() {
               </Text>
             ))}
           </View>
-
           <View style={styles.calendar}>
             {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((day) => (
               <View key={day} style={{ flex: 1, alignItems: "center" }}>
@@ -296,7 +292,6 @@ export default function Home() {
             ))}
           </View>
         </View>
-
         <View style={styles.noSmokeContainer}>
           <Text style={styles.noSmokeText}>Vezes que deixou de fumar</Text>
           <Text style={{ fontSize: 22, color: "#fff", fontWeight: "bold" }}>
@@ -322,7 +317,6 @@ export default function Home() {
             />
           </View>
         </View>
-
         <View style={styles.smokeButtonContainer}>
           <Pressable onPress={handleQueroFumar}>
             <Text style={styles.smokeButtonText}>Quero Fumar!</Text>
