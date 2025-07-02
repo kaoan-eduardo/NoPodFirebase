@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -19,6 +20,7 @@ import {
 import { auth, firestore } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/homeStyles";
+import { showAlert } from "../utils/showAlert"; // ✅ novo
 
 export default function Home() {
   const [selectedDays, setSelectedDays] = useState({
@@ -54,31 +56,47 @@ export default function Home() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Sair do aplicativo",
-      "Você tem certeza que deseja sair?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Sair",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem("imagemUsuario");
-              await AsyncStorage.removeItem("vezesNaoFumou");
-              await AsyncStorage.removeItem("ultimaResistencia");
-              setUserImage(null);
-              await signOut(auth);
-              router.replace("/");
-            } catch (error) {
-              console.error("Erro ao sair:", error);
-            }
+  const handleLogout = async () => {
+    if (Platform.OS === "web") {
+      const confirmar = window.confirm("Você tem certeza que deseja sair?");
+      if (!confirmar) return;
+      try {
+        await AsyncStorage.removeItem("imagemUsuario");
+        await AsyncStorage.removeItem("vezesNaoFumou");
+        await AsyncStorage.removeItem("ultimaResistencia");
+        setUserImage(null);
+        await signOut(auth);
+        router.replace("/");
+      } catch (error) {
+        console.error("Erro ao sair:", error);
+      }
+    } else {
+      showAlert("Sair do aplicativo", "Você tem certeza que deseja sair?");
+      Alert.alert(
+        "Sair do aplicativo",
+        "Você tem certeza que deseja sair?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Sair",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await AsyncStorage.removeItem("imagemUsuario");
+                await AsyncStorage.removeItem("vezesNaoFumou");
+                await AsyncStorage.removeItem("ultimaResistencia");
+                setUserImage(null);
+                await signOut(auth);
+                router.replace("/");
+              } catch (error) {
+                console.error("Erro ao sair:", error);
+              }
+            },
           },
-        },
-      ],
-      { cancelable: true }
-    );
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   useEffect(() => {
@@ -112,47 +130,85 @@ export default function Home() {
   }, []);
 
   const escolherImagem = async () => {
-    Alert.alert("Selecionar imagem", "Escolha uma opção", [
-      {
-        text: "Câmera",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Permissão negada", "Permita o acesso à câmera.");
-            return;
-          }
-          const resultado = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
-          if (!resultado.canceled && resultado.assets.length > 0) {
-            salvarLocalmente(resultado.assets[0].uri);
-          }
+    if (Platform.OS === "web") {
+      const usarCamera = window.confirm(
+        "Deseja usar a câmera? (Cancelar = Galeria)"
+      );
+      if (usarCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          showAlert("Permissão negada", "Permita o acesso à câmera.");
+          return;
+        }
+        const resultado = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+        });
+        if (!resultado.canceled && resultado.assets.length > 0) {
+          salvarLocalmente(resultado.assets[0].uri);
+        }
+      } else {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          showAlert("Permissão negada", "Permita o acesso à galeria.");
+          return;
+        }
+        const resultado = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+        });
+        if (!resultado.canceled && resultado.assets.length > 0) {
+          salvarLocalmente(resultado.assets[0].uri);
+        }
+      }
+    } else {
+      Alert.alert("Selecionar imagem", "Escolha uma opção", [
+        {
+          text: "Câmera",
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== "granted") {
+              showAlert("Permissão negada", "Permita o acesso à câmera.");
+              return;
+            }
+            const resultado = await ImagePicker.launchCameraAsync({
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 1,
+            });
+            if (!resultado.canceled && resultado.assets.length > 0) {
+              salvarLocalmente(resultado.assets[0].uri);
+            }
+          },
         },
-      },
-      {
-        text: "Galeria",
-        onPress: async () => {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Permissão negada", "Permita o acesso à galeria.");
-            return;
-          }
-          const resultado = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
-          if (!resultado.canceled && resultado.assets.length > 0) {
-            salvarLocalmente(resultado.assets[0].uri);
-          }
+        {
+          text: "Galeria",
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+              showAlert("Permissão negada", "Permita o acesso à galeria.");
+              return;
+            }
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [1, 1],
+              quality: 1,
+            });
+            if (!resultado.canceled && resultado.assets.length > 0) {
+              salvarLocalmente(resultado.assets[0].uri);
+            }
+          },
         },
-      },
-      { text: "Cancelar", style: "cancel" },
-    ]);
+        { text: "Cancelar", style: "cancel" },
+      ]);
+    }
   };
 
   const salvarLocalmente = async (uri: string) => {
