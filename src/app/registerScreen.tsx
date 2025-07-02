@@ -3,10 +3,11 @@ import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import React, { useState } from "react";
-import { Alert, Image, Pressable, Text, TextInput, View } from "react-native";
+import { Image, Pressable, Text, TextInput, View } from "react-native";
 import { auth, firestore } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/registerScreenStyles";
+import { showAlert } from "../utils/showAlert"; // IMPORTA O showAlert
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -16,15 +17,15 @@ export default function RegisterScreen() {
 
   const signUp = async () => {
     if (!userName.trim()) {
-      Alert.alert("Erro", "Digite seu nome");
+      showAlert("Erro", "Digite seu nome");
       return;
     }
     if (!email.trim()) {
-      Alert.alert("Erro", "Digite seu e-mail");
+      showAlert("Erro", "Digite seu e-mail");
       return;
     }
     if (!password.trim()) {
-      Alert.alert("Erro", "Digite sua senha");
+      showAlert("Erro", "Digite sua senha");
       return;
     }
 
@@ -41,7 +42,7 @@ export default function RegisterScreen() {
         email: user.email,
       });
 
-      Alert.alert(
+      showAlert(
         "Sucesso",
         "Usuário cadastrado!",
         [
@@ -53,7 +54,7 @@ export default function RegisterScreen() {
         { cancelable: false }
       );
     } catch (error: any) {
-      Alert.alert("Erro no cadastro", error.message);
+      showAlert("Erro no cadastro", error.message);
     }
   };
 

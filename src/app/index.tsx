@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -15,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/indexStyle";
+import { showAlert } from "../utils/showAlert"; // import showAlert
 
 export default function Index() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function Index() {
       router.push("/home");
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
-      Alert.alert("Erro", "Falha no login: " + error.message);
+      showAlert("Erro", "Falha no login: " + error.message);
     }
   };
 

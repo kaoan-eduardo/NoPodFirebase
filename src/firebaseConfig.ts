@@ -1,6 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -13,12 +12,11 @@ const firebaseConfig = {
   appId: "1:35048749950:web:d159bef41000a28052912f",
 };
 
+// Inicializa o app Firebase
 const app = initializeApp(firebaseConfig);
 
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
-
+// Funciona no celular e no navegador
+const auth = getAuth(app);
 const firestore = getFirestore(app);
 const storage = getStorage(app);
 

@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -14,6 +13,7 @@ import {
 import { auth } from "../firebaseConfig";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/forgotPasswordScreen";
+import { showAlert } from "../utils/showAlert";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -21,17 +21,17 @@ export default function ForgotPasswordScreen() {
 
   const handlePasswordReset = async () => {
     if (!email.trim()) {
-      Alert.alert("Aviso", "Por favor, insira seu e-mail.");
+      showAlert("Aviso", "Por favor, insira seu e-mail.");
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
-      Alert.alert("Sucesso", "Link de recuperação enviado para seu e-mail.");
+      showAlert("Sucesso", "Link de recuperação enviado para seu e-mail."); // ✅ Aqui
       router.replace("/");
     } catch (error: any) {
       console.error("Erro ao enviar e-mail:", error);
-      Alert.alert("Erro", "Falha ao enviar e-mail: " + error.message);
+      showAlert("Erro", "Falha ao enviar e-mail: " + error.message); // ✅ Aqui
     }
   };
 
@@ -49,10 +49,8 @@ export default function ForgotPasswordScreen() {
           source={require("../assets/images/appLogo.png")}
           style={styles.appLogo}
         />
-        {/* Título */}
         <Text style={styles.pageTitle}>Recuperar Senha</Text>
 
-        {/* Campo de e-mail */}
         <Text style={styles.emailText}>Digite seu e-mail</Text>
         <TextInput
           placeholder="seuemail@exemplo.com"
@@ -63,7 +61,6 @@ export default function ForgotPasswordScreen() {
           autoCapitalize="none"
         />
 
-        {/* Botão Enviar */}
         <View style={styles.containerButton}>
           <Pressable
             style={styles.loginPressable}
@@ -75,11 +72,10 @@ export default function ForgotPasswordScreen() {
           </Pressable>
         </View>
 
-        {/* Voltar */}
         <View style={styles.containerButton}>
           <Pressable
             style={styles.loginPressable}
-            onPress={() => router.back()}
+            onPress={() => router.push("./")}
           >
             <Text style={styles.loginButtonText}>Voltar</Text>
           </Pressable>
