@@ -2,8 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import { colors } from "../styles/colors";
-import { styles } from "../styles/greetingsStyles";
+import { colors } from "../../styles/colors";
+import { styles } from "../../styles/greetingsStyles";
 
 export default function Greetings() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function Greetings() {
     >
       <View>
         <Image
-          source={require("../assets/images/greetings.png")}
+          source={require("../../assets/images/greetings.png")}
           style={styles.image}
         ></Image>
       </View>

@@ -17,10 +17,10 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { auth, firestore } from "../firebaseConfig";
-import { colors } from "../styles/colors";
-import { styles } from "../styles/homeStyles";
-import { showAlert } from "../utils/showAlert"; // ✅ novo
+import { auth, firestore } from "../../firebaseConfig";
+import { colors } from "../../styles/colors";
+import { styles } from "../../styles/homeStyles";
+import { showAlert } from "../../utils/showAlert";
 
 export default function Home() {
   const [selectedDays, setSelectedDays] = useState({
@@ -283,7 +283,7 @@ export default function Home() {
       >
         <View style={styles.informations}>
           <Image
-            source={require("../assets/images/appLogo.png")}
+            source={require("../../assets/images/appLogo.png")}
             style={styles.appLogo}
           />
           <TouchableOpacity onPress={escolherImagem}>
@@ -291,7 +291,7 @@ export default function Home() {
               source={
                 userImage
                   ? { uri: userImage }
-                  : require("../assets/images/userLogo.png")
+                  : require("../../assets/images/userLogo.png")
               }
               style={styles.userLogo}
             />
@@ -349,7 +349,7 @@ export default function Home() {
           )}
           <View style={styles.imageContainer}>
             <Image
-              source={require("../assets/images/NoSmokeLogo.png")}
+              source={require("../../assets/images/NoSmokeLogo.png")}
               style={styles.noSmokeImage}
             />
           </View>
