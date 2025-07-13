@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { styles } from "../styles/breathingCircleStyles";
-import { colors } from "../styles/colors";
+import { styles } from "../../styles/breathingCircleStyles";
+import { colors } from "../../styles/colors";
 
 export default function BreathingCircle() {
   const router = useRouter();
