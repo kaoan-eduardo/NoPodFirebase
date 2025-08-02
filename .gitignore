@@ -1,0 +1,70 @@
+# Node dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS system files
+.DS_Store
+*.pem
+
+# Local env files
+.env
+.env*.local
+
+# Typescript build info
+*.tsbuildinfo
+
+# App examples, docs or samples
+app-example
+
+# Arquivos temporários criados para limpeza do Git
+.git-rewrite.txt
+
+# Editor files (adapte para seu editor)
+.vscode/
+*.code-workspace
+
+# Sistema Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Build outputs
+build/
+dist/
+
+# Coverage reports
+coverage/
+
+# Outros arquivos temporários
+*.tmp
+*.temp
+*.swp
+
+# Cache de pacotes
+.pnpm-store/
+.pnp.js
