@@ -1,50 +1,126 @@
-# Welcome to your Expo app 👋
+## 🚭 NoPodFirebase
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> Aplicativo desenvolvido com **Expo** e **Firebase** para ajudar usuários a monitorarem e reduzirem o uso do cigarro eletrônico, com recursos como registro de resistências e exercícios de respiração.
 
-## Get started
+---
 
-1. Install dependencies
+### 📲 Funcionalidades
 
-   ```bash
-   npm install
-   ```
+<small>
 
-2. Start the app
+- 🔐 **Cadastro e login** via Firebase Authentication
+- 📅 Tela de **monitoramento semanal** com os dias da semana e a última resistência registrada
+- 🧘 Tela de **respiração guiada** com círculo animado que infla e esvazia
+- ☁️ Integração com **Firebase Firestore** para salvar dados do usuário
 
-   ```bash
-   npx expo start
-   ```
+</small>
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### ⚙️ Tecnologias Utilizadas
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+<small>
 
-## Get a fresh project
+- 🧠 **React Native** com **Expo**
+- 🔥 **Firebase** (Auth + Firestore)
+- ⚛️ **React Hooks**
+- 🌐 **Expo Go** para execução no celular
 
-When you're ready, run:
+</small>
+
+---
+
+<small>
+
+### 🧪 Como Executar Localmente
+
+1. 📦 Clone o repositório:
 
 ```bash
-npm run reset-project
+git clone https://github.com/kaoan-eduardo/NoPodFirebase.git
+cd NoPodFirebase
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. 📥 Instale as dependências:
+```bash
+npm install
+# ou
+yarn install
+```
 
-## Learn more
+3. 🔧 Configure o Firebase:
 
-To learn more about developing your project with Expo, look at the following resources:
+- Crie um projeto no Firebase Console
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Ative o Authentication (email/senha)
 
-## Join the community
+- Ative e configure o Firestore
 
-Join our community of developers creating universal apps.
+- Adicione o arquivo de configuração ao projeto (normalmente firebaseConfig)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+4. 🚀 Inicie com o Expo:
+```bash
+npx expo start
+```
+
+</small>
+
+### 🧭 Navegação no App
+
+<small>
+
+- 🔑 Autenticação
+Login e cadastro com email e senha
+
+- 📆 Tela de Semana
+Visualização dos dias da semana com status da última resistência
+
+- 🧘‍♂️ Tela de Respiração
+Círculo animado que infla e desinfla para controlar o ritmo da respiração
+
+### 🤝 Contribuindo
+
+Contribuições são muito bem-vindas!
+
+1. 🍴 Faça um fork deste repositório
+
+2. 📥 Clone seu fork:
+
+```bash
+git clone https://github.com/seu-usuario/NoPodFirebase.git
+```
+
+3. 🛠️ Crie uma nova branch:
+```bash
+git checkout -b minha-feature
+```
+
+4. 💾 Faça suas modificações e commit:
+```bash
+git commit -m "Adiciona nova funcionalidade de respiração"
+```
+5. 📤 Envie para o GitHub:
+```bash
+git push origin minha-feature
+```
+6.📬 Abra um Pull Request explicando suas mudanças
+
+</small>
+
+---
+
+### 🧱 Possíveis Melhorias Futuras
+
+<small>
+
+- 📊 Gráfico de progresso do usuário ao longo da semana
+
+- 🔔 Notificações push para lembrar o exercício de respiração
+
+- 📈 Histórico detalhado do uso do vape
+
+- 📝 Exportação de relatórios
+
+</small>
+
+Feito com 💙 por [Kaoan](https://github.com/kaoan-eduardo)
