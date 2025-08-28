@@ -63,6 +63,8 @@ yarn install
 npx expo start
 ```
 
+***Use o QR Code no terminal com o app Expo Go no seu celular, ou abra em um emulador.***
+
 </small>
 
 ### 🧭 Navegação no App
